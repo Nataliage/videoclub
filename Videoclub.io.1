@@ -1,0 +1,101 @@
+create schema videoclub;
+
+set schema 'videoclub';
+
+-- Crear la tabla de Socio
+create table socio (
+    id_socio SMALLSERIAL,
+    nombre VARCHAR(50) not NULL,
+    apellido1 VARCHAR(50) not NULL,
+    apellido2 VARCHAR (50) not null,
+    fecha_nacimiento DATE not NULL,
+    telefono VARCHAR(20) not NULL,
+    DNI VARCHAR(20) not NULL
+);
+
+-- Crear la tabla de Direccion
+create table direccion (
+    id_direccion SMALLSERIAL,
+    id_socio smallint not NULL,
+    codigo_postal VARCHAR(10) not NULL,
+    calle VARCHAR(80) not NULL,
+    numero VARCHAR(5) not NULL,
+    piso VARCHAR(10) not NULL
+);
+
+
+alter table socio add constraint pk_socio primary key (id_socio);
+
+
+alter table direccion add constraint pk_direccion primary key (id_direccion);
+
+
+alter table direccion add constraint fk_socio_direccion foreign key (id_socio) references socio(id_socio);
+
+-- Crear la tabla de Pelicula
+create table pelicula (
+    id_pelicula SMALLSERIAL,
+    titulo VARCHAR(200) not NULL,
+    genero VARCHAR(100) not NULL,
+    director VARCHAR(100) not NULL,
+    sinopsis text not null 
+);
+
+
+alter table pelicula add constraint pk_pelicula primary key (id_pelicula);
+
+-- Crear la tabla de Copia
+create table copia (
+    id_copia SMALLSERIAL,
+    id_pelicula INTEGER not NULL
+);
+
+
+alter table copia add constraint pk_copia primary key  (id_copia);
+
+
+alter table copia add constraint fk_pelicula_copia foreign key (id_pelicula) references pelicula(id_pelicula);
+
+-- Crear la tabla de Prestamo
+create table prestamo (
+    id_prestamo SMALLSERIAL,
+    id_copia smallint not NULL,
+    id_socio smallint not NULL,
+    fecha_prestamo TIMESTAMP not NULL,
+    fecha_devolucion TIMESTAMP
+);
+
+
+alter table videoclub.prestamo add constraint pk_prestamo primary key (id_prestamo);
+
+
+alter table videoclub.prestamo add constraint fk_copia_prestamo foreign key (id_copia) references copia(id_copia);
+
+
+alter table videoclub.prestamo add constraint fk_socio_prestamo foreign key (id_socio) references socio(id_socio);
+
+alter table socio rename column apellido1 to apellido_1;
+alter table socio rename column apellido2 to apellido_2;
+alter table socio alter column fecha_nacimiento type VARCHAR (50);
+
+
+insert into socio(nombre, apellido_1, apellido_2, fecha_nacimiento, telefono, DNI)
+select	distinct  nombre, apellido_1, apellido_2, fecha_nacimiento, telefono, DNI
+from tmp_videoclub;
+
+insert into direccion (id_socio, codigo_postal, calle, piso, numero)
+select s.id_socio, tv.codigo_postal, tv.calle, tv.piso, tv.numero
+from tmp_videoclub tv
+join socio s on s.id_socio = s.id_socio;
+
+insert into pelicula(titulo,genero,director,sinopsis)
+select distinct  titulo,genero ,director ,sinopsis 
+from tmp_videoclub;
+
+alter table copia alter column id_copia type INT4;
+alter table copia alter column id_copia type INT4 not null;
+
+insert into copia (id_copia)
+select distinct id_copia 
+from tmp_videoclub 
+inner join pelicula p on p.id_pelicula = p.id_pelicula;
